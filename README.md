@@ -2,6 +2,7 @@
 
 **mig**ration and **admi**xtures: method to estimate parameters in a complex admixture graph with multiple and nested admixture events
 
+![Parametrisation of an admixture](admixture_parameterization.pdf)
 
 ## Pipeline (running the test)
 
