@@ -49,7 +49,7 @@ pop_admix, pop_sources_names = read_admixture(path_data + file_admixture)
 # # please create (1) list of names on mixed populations
 # # (2) the corresponding list of sources for each mixed populations.
 # # See code in the following example:
-# from example import example_admixtures
+# from data.example import example_admixtures
 # pop_admix, pop_sources_names = example_admixtures()
 
 # Indexes of source populations
