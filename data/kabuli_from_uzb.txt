@@ -1,0 +1,6 @@
+ETHI_d: LEB_d, TUR_d, IND_d
+MOR_d: LEB_d, TUR_d
+UZB_k: UZB_d
+TUR_k: TUR_d, UZB_k
+MOR_k: MOR_d, TUR_k
+LEB_k: LEB_d, TUR_k
