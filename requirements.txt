@@ -1,0 +1,5 @@
+numpy
+ete3
+sympy
+scipy
+
