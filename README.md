@@ -1,8 +1,6 @@
 # migadmi
 
-**mig**ration and **admi**xtures
-
-Method to estimate complex admixture graph with multiple and nested admixtures
+**mig**ration and **admi**xtures: method to estimate complex admixture graph with multiple and nested admixtures
 
 
 ## Pipeline (running the test)
