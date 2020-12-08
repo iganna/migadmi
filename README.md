@@ -16,9 +16,9 @@ To run **migadmi** methods, you need Python 3.4 or later. A list of required Pyt
 
 ## Authors
 
-Anna Igolkina developed the BernMix package, [e-mail](mailto:igolkinaanna11@gmail.com).    
+Anna Igolkina developed the **migadmi** package, [e-mail](mailto:igolkinaanna11@gmail.com).    
 
 
 ## License information
-The BernMix package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The **migadmi** package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
