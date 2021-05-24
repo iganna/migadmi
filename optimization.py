@@ -6,15 +6,16 @@ import numpy as np
 from scipy import optimize
 from scipy.stats import norm
 from pandas import read_csv
+from utils import showl
 
-from itertools import combinations
+from itertools import combinations, chain
 from functools import partial
 
 from tree_cov import eval_mx, eval_vect, is_branch, is_weight, is_alpha, \
     create_admixture_alpha, define_used_weights, get_cov, get_dist
 
 
-def likelihood(params, wnd, d_mx, variables_d, alpha=0.9):
+def likelihood(params, wnd, d_mx, variables_d, alpha):
     """
     Computes the likelihood value
     :param params: values of parameters
@@ -61,7 +62,7 @@ def likelihood(params, wnd, d_mx, variables_d, alpha=0.9):
     return -ll_value
 
 
-def param_estim(d_mx, variables_d, weight_sets, var_mix_all, wnd, opt_method='SLSQP'):
+def param_estim(d_mx, variables_d, weight_sets, var_mix_all, wnd, alpha, opt_method='SLSQP'):
     """
 
     :param d_mx:
@@ -87,7 +88,7 @@ def param_estim(d_mx, variables_d, weight_sets, var_mix_all, wnd, opt_method='SL
 
     linear_constraint = optimize.LinearConstraint(A, lbnd, upbnd)
 
-    obj_func = partial(likelihood, wnd=wnd, d_mx=d_mx, variables_d=variables_d)
+    obj_func = partial(likelihood, wnd=wnd, d_mx=d_mx, variables_d=variables_d, alpha=alpha)
 
     max_fun = 1000
     for i in [2, 4, 6, 8]:
@@ -110,7 +111,7 @@ def param_estim(d_mx, variables_d, weight_sets, var_mix_all, wnd, opt_method='SL
     return res.x, [item for sublist in variances_val for item in sublist]
 
 
-def opt_wnd(iwnd, pop_names, popset_init,
+def opt_wnd(pop_names, popset_init,
             pop_admix,
             pop_sources,
             admixture_steps,
@@ -120,7 +121,9 @@ def opt_wnd(iwnd, pop_names, popset_init,
             pref_wnd_init='wnd_',
             pref_out_res='res_',
             pref_out_var='var_',
-            opt_method='SLSQP'):
+            opt_method='SLSQP',
+            alpha=0.9,
+            iwnd=None):
     """
     Optimise all admixtures in one window
     :param iwnd: id of the window
@@ -138,6 +141,12 @@ def opt_wnd(iwnd, pop_names, popset_init,
     :param opt_method: optimisation method
     :return: -
     """
+
+    if (iwnd is None):
+        swnd = ''
+    else:
+        swnd = str(iwnd + 1)
+
 
     variables_estimated = dict()
     for istep in range(len(admixture_steps)):
@@ -168,8 +177,10 @@ def opt_wnd(iwnd, pop_names, popset_init,
 
         # --------------------------
         # Optimisation
-        print(iwnd)
-        wnd_init = read_csv(path_data_in + pref_wnd_init + str(iwnd + 1) + '.txt', sep='\t', index_col=0)
+
+
+        wnd_init = read_csv(path_data_in + pref_wnd_init + swnd + '.txt', sep='\t', index_col=0)
+
         pop_current = pop_names + [p for i, p in enumerate(pop_admix) if i in idx_pop]
         wnd = wnd_init.loc[pop_current, pop_current]
 
@@ -177,13 +188,15 @@ def opt_wnd(iwnd, pop_names, popset_init,
         # print(d_mx)
 
 
-        param_val, variances = param_estim(d_mx, variables_d, weight_sets, var_mix_all, wnd, opt_method=opt_method)
+        param_val, variances = param_estim(d_mx, variables_d, weight_sets, var_mix_all, wnd,
+                                           opt_method=opt_method,
+                                           alpha=alpha)
 
         param_val[param_val < 10 ** -6] = 0
 
 
-        # showl(list(zip(variables_d, param_val)))
-        # showl(variances)
+        showl(list(zip(variables_d, param_val)))
+        showl(variances)
 
         variables_estimated.update(dict(zip(variables_d, param_val)))
 
@@ -193,5 +206,19 @@ def opt_wnd(iwnd, pop_names, popset_init,
             variables_estimated.pop(variables[0])
             variables_estimated.pop(variables[1])
 
-    np.savetxt(X=list(variables_estimated.values()), fname=path_data_out + pref_out_res + str(iwnd + 1) + '.txt', delimiter='\t')
-    np.savetxt(X=variances, fname=path_data_out + pref_out_var + str(iwnd + 1) + '.txt', delimiter='\t')
+    # np.savetxt(X=list(variables_estimated.values()), fname=path_data_out + pref_out_res + str(iwnd + 1) + '.txt', delimiter='\t')
+
+    pop_all = pop_names + pop_admix
+    alpha_corresp = list(chain(*[[[pop_admix[i], pop_all[j]] for j in pop_sources[i]]
+                      for i in range(len(pop_sources))]))
+    alpha_extims = [[x, y] for x, y in variables_estimated.items()
+                    if is_weight(x)]
+
+    f = open(path_data_out + pref_out_res + swnd + '.txt', 'w')
+    for corr, estim in list(zip(alpha_corresp, alpha_extims)):
+        # print(corr + estim)
+        f.write('{} {}: {}: {}\n'.format(corr[0], corr[1], estim[0], estim[1]))
+    f.close()
+
+
+    np.savetxt(X=variances, fname=path_data_out + pref_out_var + swnd + '.txt', delimiter='\t')

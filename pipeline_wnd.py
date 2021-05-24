@@ -1,7 +1,6 @@
 """
 Pipeline to optimise admixture graph of the known topology
 """
-import numpy as np
 from ete3 import Tree
 
 import os
