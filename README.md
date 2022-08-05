@@ -5,6 +5,7 @@
 <img src="admixture_parameterization.png" width="400">
 
 For admixture schemes of high complexity, migadmi introduces admixture parameters and makes the symbolic inference of covariance matrix between populations. After that, it optimizes parameters with SLSQP (Sequential Least Squares Programming) method.
+Delais of the method is described in the paper [Historical routes for diversification of domesticated chickpea inferred from landrace genomics](https://doi.org/10.1101/2021.01.27.428389).
 
 ## Input data
 
@@ -115,6 +116,9 @@ To run **migadmi** methods, you need Python 3.4 or later. A list of required Pyt
 ## Authors
 
 Anna Igolkina developed the **migadmi** package, [e-mail](mailto:igolkinaanna11@gmail.com).
+
+## Citation
+This method is described in the paper [Historical routes for diversification of domesticated chickpea inferred from landrace genomics](https://doi.org/10.1101/2021.01.27.428389).
 
 
 ## License information
