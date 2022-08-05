@@ -120,14 +120,19 @@ def param_estim(d_mx, variables_d, weight_sets, dist_curr, alpha, opt_method='SL
     return res.x
 
 
-def migadmi(pop_names,
-                tree,
+def migadmi(tree,
                 admixtures,
                 admixture_steps,
                 dist_matrix,
                 opt_method='SLSQP',
                 alpha=1):
+
+    # Get names of the base source populations
+    pop_names = [node.name for node in tree.traverse("levelorder") if node.is_leaf()]
+
     popset_init, variables_init = get_populations(tree, pop_names)
+
+
 
     pop_admix = list(admixtures.keys())
     pop_sources_names = list(admixtures.values())

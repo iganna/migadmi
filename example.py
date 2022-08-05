@@ -15,8 +15,6 @@ path_data = 'example/'
 # ------- Tree -------
 file_tree = 'tree_init.nwk'
 tree = Tree(path_data + file_tree)
-# Get names of the base source populations
-pop_names = [node.name for node in tree.traverse("levelorder") if node.is_leaf()]
 
 # ------- Distance matrix -------
 
@@ -44,11 +42,11 @@ admixtures = read_admixture(path_data + file_admixture)
 
 # Steps to optimize admixture in a sequence
 admixture_steps = [[0, 1], [2, 3], [4, 5]]
+# admixture_steps = [[0, 1], [2, 3], [4, 5]]
 
 # ------- Optimisation -------
 
-res = migadmi(pop_names=pop_names,
-              tree=tree,
+res = migadmi(tree=tree,
               admixtures=admixtures,
               admixture_steps=admixture_steps,
               dist_matrix=d_mx)
