@@ -1,5 +1,5 @@
 """
-This module contain functions to optimise parameters
+This module contains functions to optimise parameters
 """
 
 import numpy as np
@@ -13,6 +13,7 @@ from functools import partial
 
 from tree_cov import eval_mx, eval_vect, is_branch, is_weight, is_alpha, \
     create_admixture_alpha, define_used_weights, get_cov, get_dist
+from tree_cov import get_populations
 
 
 def likelihood(params, dist_curr, d_mx, variables_d, alpha):
@@ -60,6 +61,7 @@ def likelihood(params, dist_curr, d_mx, variables_d, alpha):
         else:
             ll_value += (alpha - 1) * np.log(10 ** -5)
 
+
     return -ll_value
 
 
@@ -93,6 +95,8 @@ def param_estim(d_mx, variables_d, weight_sets, dist_curr, alpha, opt_method='SL
     lbnd = [1] * len(cons_w)
     upbnd = [1] * len(cons_w)
 
+
+
     linear_constraint = optimize.LinearConstraint(A, lbnd, upbnd)
 
     obj_func = partial(likelihood, dist_curr=dist_curr, d_mx=d_mx, variables_d=variables_d, alpha=alpha)
@@ -116,17 +120,42 @@ def param_estim(d_mx, variables_d, weight_sets, dist_curr, alpha, opt_method='SL
     return res.x
 
 
+def migadmi(pop_names,
+                tree,
+                admixtures,
+                admixture_steps,
+                dist_matrix,
+                opt_method='SLSQP',
+                alpha=1):
+    popset_init, variables_init = get_populations(tree, pop_names)
+
+    pop_admix = list(admixtures.keys())
+    pop_sources_names = list(admixtures.values())
+
+    # Indexes of source populations
+    pop_sources = [[i for i, p in enumerate(pop_names + pop_admix) if p in pop]
+                   for pop in pop_sources_names]
+
+    return migadmi_old(pop_names,
+                popset_init,
+                variables_init,
+                pop_admix,
+                admixture_steps,
+                dist_matrix,
+                pop_sources=pop_sources,
+                opt_method=opt_method,
+                alpha=alpha)
 
 
-def popdisp(pop_names,
-            popset_init,
-            variables_init,
-            pop_admix,
-            admixture_steps,
-            dist_matrix,
-            pop_sources=None,
-            opt_method='SLSQP',
-            alpha=1):
+def migadmi_old(pop_names,
+                popset_init,
+                variables_init,
+                pop_admix,
+                admixture_steps,
+                dist_matrix,
+                pop_sources=None,
+                opt_method='SLSQP',
+                alpha=1):
     """
     Optimise all admixtures in one window
     :param popset_init: list of initial source populstions
@@ -136,15 +165,9 @@ def popdisp(pop_names,
     :param admixture_steps: sequence of admixtures
     :param popset_init: initial
     :param variables_init:
-    :param path_data_in: path to the folder with data
-    :param path_data_out: path to the folder for the output
-    :param pref_wnd_init: prefix for the input files with the observed distance matrix
-    :param pref_out_res: prefix for the output file with parameter estimates
-    :param pref_out_var: prefix for the output file with variances
     :param opt_method: optimisation method
     :return: -
     """
-
 
 
     variables_estimated = dict()
@@ -229,3 +252,62 @@ def popdisp(pop_names,
     #
     #
     # np.savetxt(X=variances, fname=path_data_out + pref_out_var + swnd + '.txt', delimiter='\t')
+
+
+def decomposition_of_variance(pop_names,
+            popset_init,
+            variables_init,
+            pop_admix,
+            admixture_steps,
+            pop_sources=None,
+            opt_method='SLSQP',
+            alpha=1):
+    """
+    Optimise all admixtures in one window
+    :param popset_init: list of initial source populstions
+    :param pop_names: names of initial populations
+    :param pop_admix: names of mixed populations
+    :param pop_sources: sources of admixtures
+    :param admixture_steps: sequence of admixtures
+    :param popset_init: initial
+    :param variables_init:
+    :param opt_method: optimisation method
+    :return: -
+    """
+
+
+    variables_estimated = dict()
+    var_mix_all = []
+
+    for istep in range(len(admixture_steps)):
+
+        idx_pop = [item for i in range(istep + 1) for item in admixture_steps[i]]
+        popset = popset_init
+        variables = variables_init
+        weight_sets = []
+        weights_used = []
+        var_mix_all_init = []
+
+        for i in idx_pop:
+            popset, variables, var_mix = create_admixture_alpha(popset,
+                                                                variables, pop_sources[i])
+            weight_sets, weights_used = define_used_weights(weight_sets, weights_used, variables)
+            var_mix_all_init += [var_mix]
+
+        # matrix of distances from the root (covariance matrix)
+        v_mx = get_cov(popset, variables)
+        # matrix of distances between leaves
+        d_mx = get_dist(v_mx)
+
+        # remove already estimated variables
+        d_mx = d_mx.subs(variables_estimated)
+        # variances of the new populations
+        var_mix_all += [[v.subs(variables_estimated) for v in var_mix]
+                       for var_mix in var_mix_all_init]
+
+        # variables which are not estimated
+        variables_d = [v for v in variables if v not in variables_estimated.keys()]
+        # weights which are not estimated
+        weight_sets = [[w for w in elem if w not in variables_estimated.keys()] for elem in weight_sets]
+    v_diag = [v_mx[i,i] for i in range(v_mx.shape[0])]
+    return v_diag, weight_sets

@@ -24,13 +24,16 @@ path_data_out = path_data + 'out_testing/'
 if not os.path.exists(path_data_out):
     os.mkdir(path_data_out)
 
-n_sim = 100
-n_adm = 2
-pop_admix = ['admix' + str(i+1) for i in range(n_adm)]
 
-# for i_sim in range(1, n_sim+1):
-i_sim = 1
+
 def simulation(i_sim):
+
+    np.random.seed(seed=i_sim + 239)
+
+    n_adm = 2
+    pop_admix = ['admix' + str(i + 1) for i in range(n_adm)]
+
+
     # Initial Tree
     file_tree = path_data + 'sim_tree.nwk'
     # file_dist = '{}s{}_dist.txt'.format(path_data_in, i_sim)
@@ -51,6 +54,9 @@ def simulation(i_sim):
     # Indexes of source populations
     pop_sources = [list(np.sort(np.random.choice(n_source + i, np.random.choice(2)+2, replace=False)))
      for i in range(n_adm)]
+
+    with open('{}test{}_pop_sources.txt'.format(path_data_out, i_sim), 'w') as f:
+        f.write('{}\n'.format(pop_sources))
 
     pop_sources_names = [[pop_names_all[i] for i in idxs]
         for idxs in pop_sources]
@@ -97,24 +103,39 @@ def simulation(i_sim):
     variance_real = d_mx.subs(variables_created)
     variance_real = DataFrame(np.array(variance_real), columns=pop_names_all,
                    index=pop_names_all)
-    dist_real = variance_real ** (1/2)
+    dist_real = variance_real ** (1/2)  # why square root?
+
+    np.savetxt(X=dist_real, fname='{}test{}_dist.txt'.format(path_data_out, i_sim),
+               delimiter='\t')
+
+    f = open('{}test{}_variables_created.txt'.format(path_data_out, i_sim), 'w')
+    for k, v in variables_created.items():
+        # print(corr + estim)
+        f.write(f'{k}:{v}\n')
+    f.close()
+
 
     # --------------------------
     # Simulate frequencies
     n_sim = 100
+
+    # increments are only for branches! weights and admixture parameters are the same
     x_incr = dict()
     for v in variables:
         if not is_branch(v):
             continue
+        # the scale parameter is not variance it is a square root of variance
         x_incr[v] = np.random.normal(loc=0,
                                      scale=variables_created[v] ** (1/2),
                                      size=n_sim-1)
 
     x = []
+    x_in = []
     for perc_init in list(range(1, n_sim)):
         f_init = perc_init / n_sim
         x_init = np.log((1-f_init) / f_init)
 
+        # increment of X along the branches: could be positive or negative
         x_increment = dict(variables_created)
         for v in variables:
             if not is_branch(v):
@@ -125,6 +146,7 @@ def simulation(i_sim):
         x_end = np.array(list(x_mx.diagonal()))
 
         x += [x_end]
+        x_in += [f_init]
 
     x_mx = np.array(x).transpose()
 
@@ -139,14 +161,14 @@ def simulation(i_sim):
     # --------------------------------------------------
     # Estimation
     # admixture_steps = [[0], [1]]
-    popdisp_part = partial(popdisp, pop_names=pop_names,
+    popdisp_part = partial(migadmi_old, pop_names=pop_names,
                            popset_init=popset_init,
                            variables_init=variables_init,
                            pop_admix=pop_admix,
                            admixture_steps=admixture_steps,
                            pop_sources=pop_sources)
     # Estimation
-    variables_estim_real = popdisp_part(dist_matrix=dist_real)
+    variables_estim_real = popdisp_part(dist_matrix=dist_real * 2)
     variables_estim_sim = popdisp_part(dist_matrix=dist_sim)
 
     delta_w_real = [np.mean([abs(variables_estim_real[w] - variables_created[w])
@@ -157,14 +179,12 @@ def simulation(i_sim):
 
 
     with open('{}test{}.txt'.format(path_data_out, i_sim), 'w') as f:
-        sys.stdout = f
-        print(i_sim, delta_w_real, delta_w_sim)
-
-simulation(i_sim)
+        f.write('{}\t{}\t{}'.format(i_sim, delta_w_real, delta_w_sim))
 
 
 n_sim = 100
-with Pool(n_sim) as workers:
+n_thr = 30
+with Pool(n_thr) as workers:
     pmap = workers.map
     pmap(simulation, range(n_sim))
 

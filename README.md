@@ -9,7 +9,7 @@ For admixture schemes of high complexity, migadmi introduces admixture parameter
 ## Input data
 
 #### 1. A binary tree of relationships between base source populations
-For some of the population, the relationship should be provided. Then these populations could be used as sources, and after an admixture event, each new mixture population also could play the role of a source. 
+For some of the population, the relationship should be provided. Then these populations could be used as sources, and after an admixture event, each new mixture population also could play the role of a source.
 We suggest providing the tree in with .nwk format:
 
 ```
@@ -50,7 +50,7 @@ There is an option for step-by-step optimisation of admixture events:
 ```
 admixture_steps = [[0, 1], [2, 3], [4, 5]]
 ```
-In this case the admixture parameters will be optimised in three steps.
+In this case the exdixture parameters will be optimised in three steps.
 
 
 ## Getting Started
@@ -59,16 +59,16 @@ Clone this directory to your computer
 
 ## Pipeline (running the test)
 
-To demonstrate the test, please run `pipeline_wnd.py`
+To demonstrate the test, please run `example.py`
 
 ## Requirements
 
-To run **migadmi** methods, you need Python 3.4 or later. A list of required Python packages that the migadmi depends on, are in `requirements.txt`.  
+To run **migadmi** methods, you need Python 3.4 or later. A list of required Python packages that the migadmi depends on, are in `requirements.txt`.
 
 
 ## Authors
 
-Anna Igolkina developed the **migadmi** package, [e-mail](mailto:igolkinaanna11@gmail.com).    
+Anna Igolkina developed the **migadmi** package, [e-mail](mailto:igolkinaanna11@gmail.com).
 
 
 ## License information

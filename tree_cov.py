@@ -435,7 +435,6 @@ def get_own_variance(popset, variables):
             popset_no_weights[i] = popset_no_weights[i].subs(v, 0)
 
 
-
     var_own = [];
     for i in range(n_pop):
         sym_own = popset_no_weights[i].free_symbols

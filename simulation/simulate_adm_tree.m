@@ -19,7 +19,7 @@ f_possible = 0.01:0.01:0.99
 % sf = scaling_factors
 sf = [2, 1, 0.5, 0.3, 0.2];
 
-
+corr_d = [];
 for i_sim = 1:n_sim
     
         
@@ -32,9 +32,6 @@ for i_sim = 1:n_sim
     file_d = [path_simdata 'd',  num2str(i_sim, '%02i') '.txt'];
     file_fig = [path_simdata 'fig',  num2str(i_sim, '%02i') '.pdf'];
     
-
-
-
     t = rand(6,1);
     len_routes = [[0;0;0;0],[t(1);t(1);t(2);t(2)] * sf(1), [t(3);t(4);t(5);t(6)]*sf(2)];
     len_routes_init = size(len_routes, 2);
@@ -43,6 +40,14 @@ for i_sim = 1:n_sim
     idxs_sources = [];
     % Admixtures
     fclose(fopen(file_admix, 'w'));
+    
+    dmx = []
+    for i = 1:4
+        for j = 1:4
+            idx = len_routes(i,:) ~= len_routes(j,:);
+            dmx(i,j) = sum(sum(len_routes([i,j], idx)))
+        end
+    end
 
     for i_adm = 1:n_admixtures
         n_route = size(len_routes, 2);
@@ -58,7 +63,17 @@ for i_sim = 1:n_sim
         route_new = sum(max(cumsum(len_routes(idx_sources,:),2)')' .* adm_alpha);
         route_new = [route_new, repmat(0, 1, n_route-1)]
         len_routes = [len_routes; route_new];
-        len_routes = [len_routes, rand(size(len_routes, 1), 1) * sf(2+i_adm)];
+        last_segment = len_routes(:, size(len_routes, 2));
+        last_segment(last_segment == 0) = len_routes(last_segment == 0, 1)
+        
+        len_routes = [len_routes, last_segment * sf(2+i_adm)];
+        
+        dmx_new = mean(dmx(idx_sources, :) .* repmat(adm_alpha, 1, size(dmx, 2)));
+        dmx = [dmx; dmx_new]; dmx = [dmx, [dmx_new'; 0]];
+        dmx = dmx + repmat(len_routes(:,size(len_routes, 2)), 1, size(dmx, 1));
+        dmx = dmx + repmat(len_routes(:,size(len_routes, 2)), 1, size(dmx, 1))';
+        dmx = dmx - diag(diag(dmx));
+        
        
         % Remember
         alphas = [alphas; {adm_alpha}];
@@ -74,7 +89,14 @@ for i_sim = 1:n_sim
 
     end    
     
-    writecell(alphas, file_alphas)
+    writematrix('', file_alphas, 'Delimiter', '\t')
+    
+    for itmp = 1:length(alphas)
+        dlmwrite(file_alphas, alphas{itmp},'-append', 'Delimiter', '\t')    
+    end
+    
+    
+    
     writecell(idxs_sources, file_idxs)
     
     
@@ -89,12 +111,13 @@ for i_sim = 1:n_sim
         p_new = sum(adm_alpha .* p_sources)
         p_new = [repmat(p_new, 1, size(points, 2))]
         points = [points; p_new];
-        points = [points, points(:,size(points, 2)) + (rand(size(points, 1), 1) - 0.5)*0.1];
+%         points = [points, points(:,size(points, 2)) + (rand(size(points, 1), 1) - 0.5)*0.1];
+        points = [points, points(:,size(points, 2))];
     end
     
     
     
-%     if(i_sim == 1)
+    if(i_sim == 1)
         % Figure
         len_routes_cum = cumsum(len_routes,2);
         f1 = figure; hold on;
@@ -115,8 +138,8 @@ for i_sim = 1:n_sim
         legend(names_leaves)
         saveas(gcf, file_fig);
         close(f1);
-
-%     end
+% 
+    end
     
     writematrix(len_routes, file_len_route)
         
@@ -183,7 +206,6 @@ for i_sim = 1:n_sim
             f_branch = [f_branch, f_branch_new];
         end
         
-s
 
 %         len_routes_cum = cumsum(len_routes,2);
 %         f1 = figure; hold on;
@@ -200,22 +222,30 @@ s
     writecell(names_leaves, file_freqs, 'Delimiter', '\t')
     dlmwrite(file_freqs,f_all,'-append', 'Delimiter', '\t')
     
-    d = array2table(squareform(pdist(f_all')))
+%     d = array2table(squareform(pdist(f_all')))
     
+    d = array2table(squareform(pdist(log((1-f_all') ./f_all') )));
+%     d = array2table(dmx)
+
     d.Properties.RowNames = names_leaves;
     d.Properties.VariableNames = names_leaves;
     writetable(d, file_d, 'Delimiter', '\t', 'WriteRowNames', true)
     
+    
+    tmp = table2array(d);
+    tmp = tmp(:);
+    corr_d = [corr_d; corr(tmp(:), dmx(:))];
+    
 end
 
-
-d = squareform(pdist(f_all'))
-
-t = seqneighjoin(d(1:n_leaves, 1:n_leaves),'equivar', names_sources)
-plot(t)
-
-t = seqneighjoin(d,'equivar', names_leaves)
-plot(t)
+% 
+% d = squareform(pdist(f_all'))
+% 
+% t = seqneighjoin(d(1:n_leaves, 1:n_leaves),'equivar', names_sources)
+% plot(t)
+% 
+% t = seqneighjoin(d,'equivar', names_leaves)
+% plot(t)
 
 
 
