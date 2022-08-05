@@ -43,7 +43,8 @@ MOR_k: MOR_d, TUR_k
 LEB_k: LEB_d, TUR_k
 ```
 
-The number of source populations for each mixture could be {1,2,3,4...}. 1 - when it is just a new branch. In principle, the number is not limited; however, the problem could be weakly identifiable with the growth of the number of sources for an admixture event. To cope with the identification problem, we use regularisation for admixture weights (Dirichlet prior, all concentration parameters = 0.9).
+The number of source populations for each mixture could be {1,2,3,4...}. 1 - when it is just a new branch. In principle, the number is not limited; however, the problem could be weakly identifiable with the growth of the number of sources for an admixture event.
+To cope with the identification problem, we use regularisation for admixture weights: the Dirichlet prior, with concentration parameter `alpha`, `alpha=1` - the absence of regularisation.
 
 There is an option for step-by-step optimisation of admixture events:
 
@@ -52,14 +53,59 @@ admixture_steps = [[0, 1], [2, 3], [4, 5]]
 ```
 In this case the exdixture parameters will be optimised in three steps.
 
+## Run migadmi
+
+```
+variables, variance_decomposition, weight_sets = migadmi(tree=tree,
+              admixtures=admixtures,
+              admixture_steps=admixture_steps,
+              dist_matrix=d_mx, alpha=1)
+```
+
+To demonstrate the test, please run `example.py`
+
+## Ouput data
+
+#### 1. Optimised parameters
+Dictionary of parameters and values. There are three types of parameters: branch lengths, admixture weights, and parts of common variance with sources (alpha parameter on the Figure)
+Names of these three types start with the letters "t", "w" and "a", respectively. For example:
+
+```
+{'t0': 0.0,
+ 't1': 0.0,
+ 't2': 0.729128663694431,
+ 't3': 0.1202425699727737,
+ 't4': 0.2139704726613705,
+ 't5': 0.18213312504471313,
+ 't6': 0.48002745557810955,
+ 'a7': 0.23128479141352762,
+ 'w8': 0.9365519173251352,
+ 'w9': 0.0,
+ 'w10': 0.06344808267486482}
+ ```
+
+
+#### 2. Decomposition of variance for mixture populations
+For each admixture population, **migadmi** estimates the proportion of variance explained by sources and proportion of own variance.
+
+```
+[['ETHI_d', 'LEB_d', 0.0665210082552726],
+ ['ETHI_d', 'TUR_d', 0],
+ ['ETHI_d', 'IND_d', 8.95945904316835e-5],
+ ['ETHI_d', 'ETHI_d', 0.933389397154296]]  # own variance
+ ```
+
+#### 3. Names of weight parameters for admixtures
+Names of weight parameters, corresponding to the admixture events.
+
+```
+[[w8, w9, w10], [w13, w14], [], [w19, w20], [w23, w24], [w27, w28]]
+```
+
 
 ## Getting Started
 
 Clone this directory to your computer
-
-## Pipeline (running the test)
-
-To demonstrate the test, please run `example.py`
 
 ## Requirements
 
