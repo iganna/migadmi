@@ -50,7 +50,7 @@ There is an option for step-by-step optimisation of admixture events:
 ```
 admixture_steps = [[0, 1], [2, 3], [4, 5]]
 ```
-In this case the exdixture parameters will be optimised in three steps.
+In this case the admixture parameters will be optimised in three steps.
 
 
 ## Getting Started
