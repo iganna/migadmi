@@ -141,7 +141,7 @@ def migadmi(tree,
     pop_sources = [[i for i, p in enumerate(pop_names + pop_admix) if p in pop]
                    for pop in pop_sources_names]
 
-    return migadmi_old(pop_names,
+    res = migadmi_old(pop_names,
                 popset_init,
                 variables_init,
                 pop_admix,
@@ -150,6 +150,46 @@ def migadmi(tree,
                 pop_sources=pop_sources,
                 opt_method=opt_method,
                 alpha=alpha)
+
+    variables = {str(w):val for w, val in res.items()}
+
+    # Decomposition of variances
+    v_diag, weight_sets = decomposition_of_variance(pop_names=pop_names,
+                                                    popset_init=popset_init,
+                                                    variables_init=variables_init,
+                                                    pop_admix=pop_admix,
+                                                    admixture_steps=admixture_steps,
+                                                    pop_sources=pop_sources)
+
+    pop_all = pop_names + pop_admix
+    decomp_wnd = []
+    for iwset, wset in enumerate(weight_sets):
+
+        if len(wset) == 0:
+            continue
+
+        v_tmp_0 = dict(variables)
+        for w_tmp in wset:
+            v_tmp_0[str(w_tmp)] = 0
+        v_values_0 = [v.subs(v_tmp_0) for v in v_diag]
+
+        variances = []
+        for w in wset:
+            v_tmp = dict(v_tmp_0)
+            v_tmp[str(w)] = variables[str(w)]
+
+            # v_values_w += [[v.subs(v_tmp) - v_values_0[i] for i,v in enumerate(v_diag)]]
+
+            variances += [v_diag[iwset + len(pop_names)].subs(v_tmp) - v_values_0[iwset + len(pop_names)]]
+        variances += [v_values_0[iwset + len(pop_names)]]
+
+        percent = [v / sum(variances) for v in variances]
+        for i in range(len(wset)):
+            decomp_wnd += [[pop_admix[iwset], pop_all[pop_sources[iwset][i]], percent[i]]]
+        decomp_wnd += [[pop_admix[iwset], pop_admix[iwset], percent[len(wset)]]]
+
+
+    return variables, decomp_wnd, weight_sets
 
 
 def migadmi_old(pop_names,

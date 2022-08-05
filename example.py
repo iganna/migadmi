@@ -8,19 +8,19 @@ from pandas import read_csv
 from utils import read_admixture
 from migadmi_opt import migadmi
 
-# Setup
+# ------- Setup -------
 path_data = 'example/'
-
 
 # ------- Tree -------
 file_tree = 'tree_init.nwk'
-tree = Tree(path_data + file_tree)
+tree = Tree(f'{path_data}{file_tree}')
 
 # ------- Distance matrix -------
+file_dist = 'wnd_40.txt'
+d_mx = read_csv(f'{path_data}{file_dist}', sep='\t', index_col=0)
 
-d_mx = read_csv(f'{path_data}wnd_40.txt', sep='\t', index_col=0)
-
-# # User can also provide the allele frequencies:
+# # User can also provide the allele frequencies and
+# perform the CoDA-base estimation of allele frequencies
 
 
 # ------- Admixture events -------
@@ -42,13 +42,10 @@ admixtures = read_admixture(path_data + file_admixture)
 
 # Steps to optimize admixture in a sequence
 admixture_steps = [[0, 1], [2, 3], [4, 5]]
-# admixture_steps = [[0, 1], [2, 3], [4, 5]]
 
-# ------- Optimisation -------
+# ------- Optimisation and  Get results-------
 
-res = migadmi(tree=tree,
+variables, variance_decomposition, weight_sets = migadmi(tree=tree,
               admixtures=admixtures,
               admixture_steps=admixture_steps,
-              dist_matrix=d_mx)
-
-# ------- Get results -------
+              dist_matrix=d_mx, alpha=1)
