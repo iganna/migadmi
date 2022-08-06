@@ -22,10 +22,7 @@ To read the tree, use the following code:
 from ete3 import Tree
 file_tree = 'data/tree_init.nwk'
 tree = Tree(file_tree)
-popset_init, variables_init = get_populations(tree, pop_names)
 ```
-
-
 
 #### 2. Allele frequencies in populations or the distance matrix
 Table with populations in columns, SNPs in rows. Allele frequency values are numbers in [0,1]. These values are used to calculate the distance matrix between populations using the compositional data analysis (CoDA).
